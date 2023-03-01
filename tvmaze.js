@@ -3,7 +3,8 @@
 const $showsList = $("#showsList");
 const $episodesArea = $("#episodesArea");
 const $searchForm = $("#searchForm");
-
+const defaultImg = "https://tinyurl.com/tv-missing";
+const baseUrl = "http://api.tvmaze.com/";
 
 /** Given a search term, search for tv shows that match that query.
  *
@@ -14,54 +15,33 @@ const $searchForm = $("#searchForm");
 
 async function getShowsByTerm(searchTerm) {
   // ADD: Remove placeholder & make request to TVMaze search shows API.
-  const request = await axios.get(`http://api.tvmaze.com/search/shows?`,
-                                  { params: { q: searchTerm } });
+  const response = await axios.get(`${baseUrl}search/shows?`, {
+    params: { q: searchTerm },
+  });
 
-  console.log('request', request)
-  const showsArray = [];
+  const showsArray = []; //TODO:use map method
 
-  for (const show of request.data) {
-    const showId = show.show.id;
-    const showName = show.show.name;
-    const showSummary = show.show.summary;
+  for (const showInfo of response.data) {
+    const showId = showInfo.show.id;
+    const showName = showInfo.show.name;
+    const showSummary = showInfo.show.summary;
 
-    const showImage = show.show.image === null
-                        ? `https://picsum.photos/200/300`
-                        : show.show.image.original;
+    const showImage =
+      showInfo.show.image === null ? defaultImg : showInfo.show.image.original;
 
     showsArray.push({
       id: showId,
       name: showName,
       summary: showSummary,
-      image: showImage
+      image: showImage,
     });
-    console.log('showsArray', showsArray);
   }
+  console.log("showsArray", showsArray);
 
-  console.log('request:', request);
+  console.log("response:", response);
 
-
-
-  return [
-    {
-      id: 1767,
-      name: "The Bletchley Circle",
-      summary:
-        `<p><b>The Bletchley Circle</b> follows the journey of four ordinary
-           women with extraordinary skills that helped to end World War II.</p>
-         <p>Set in 1952, Susan, Millie, Lucy and Jean have returned to their
-           normal lives, modestly setting aside the part they played in
-           producing crucial intelligence, which helped the Allies to victory
-           and shortened the war. When Susan discovers a hidden code behind an
-           unsolved murder she is met by skepticism from the police. She
-           quickly realises she can only begin to crack the murders and bring
-           the culprit to justice with her former friends.</p>`,
-      image:
-        "http://static.tvmaze.com/uploads/images/medium_portrait/147/369403.jpg"
-    }
-  ];
+  return showsArray;
 }
-
 
 /** Given list of shows, create markup for each and to DOM */
 
@@ -73,8 +53,8 @@ function populateShows(shows) {
       `<div data-show-id="${show.id}" class="Show col-md-12 col-lg-6 mb-4">
          <div class="media">
            <img
-              src="http://static.tvmaze.com/uploads/images/medium_portrait/160/401704.jpg"
-              alt="Bletchly Circle San Francisco"
+              src="${show.image}"
+              alt="${show.name}"
               class="w-25 me-3">
            <div class="media-body">
              <h5 class="text-primary">${show.name}</h5>
@@ -85,12 +65,16 @@ function populateShows(shows) {
            </div>
          </div>
        </div>
-      `);
+      `
+    );
 
     $showsList.append($show);
   }
+  $(".Show").on("click", ".Show-getEpisodes", function () {
+    let showId = $(this).closest(".Show").data("show-id");
+    getEpisodesOfShow(showId);
+  });
 }
-
 
 /** Handle search form submission: get shows from API and display.
  *    Hide episodes area (that only gets shown if they ask for episodes)
@@ -109,12 +93,14 @@ $searchForm.on("submit", async function (evt) {
   await searchForShowAndDisplay();
 });
 
-
 /** Given a show ID, get from API and return (promise) array of episodes:
  *      { id, name, season, number }
  */
 
-// async function getEpisodesOfShow(id) { }
+async function getEpisodesOfShow(showId) {
+  const request = await axios.get(`${baseUrl}shows/${showId}/episodes`);
+  console.log("episodesRequest:", request);
+}
 
 /** Write a clear docstring for this function... */
 
