@@ -70,10 +70,17 @@ function populateShows(shows) {
 
     $showsList.append($show);
   }
-  $(".Show").on("click", ".Show-getEpisodes", function () {
-    let showId = $(this).closest(".Show").data("show-id");
-    getEpisodesOfShow(showId);
-  });
+  $(".Show").on("click", ".Show-getEpisodes", searchForEpisodesAndDisplay);
+}
+/**
+ * searchForEpisodesAndDisplay: handle episode button click,
+ * get episodes data from API and display
+ */
+async function searchForEpisodesAndDisplay() {
+  //TODO: use event.target instead of this
+  let showId = $(this).closest(".Show").data("show-id"); //TODO: declare with const
+  const episodes = await getEpisodesOfShow(showId);
+  populateEpisodes(episodes);
 }
 
 /** Handle search form submission: get shows from API and display.
@@ -93,15 +100,41 @@ $searchForm.on("submit", async function (evt) {
   await searchForShowAndDisplay();
 });
 
-/** Given a show ID, get from API and return (promise) array of episodes:
- *      { id, name, season, number }
+/** getEpisodesOfShow: Given a show ID, get from API and return (promise)
+ * array of episodes: { id, name, season, number }
  */
 
 async function getEpisodesOfShow(showId) {
-  const request = await axios.get(`${baseUrl}shows/${showId}/episodes`);
+  //TODO: change to response
+  const request = await axios.get(`${baseUrl}shows/${showId}/episodes`); //TODO: make baseURL
   console.log("episodesRequest:", request);
+  const episodeArray = request.data.map((episodeData) => {
+    //TODO: just use the contest name
+    return {
+      id: episodeData.id,
+      name: episodeData.name,
+      season: episodeData.season,
+      number: episodeData.number,
+    };
+  });
+  console.log("episodeArr:", episodeArray);
+  return episodeArray;
 }
 
-/** Write a clear docstring for this function... */
+/** populateEpisodes: given a list of episodes info {names, season, number, id}, populate
+ *  the #episodesList part of the DOM. Unhide episode area */
 
-// function populateEpisodes(episodes) { }
+function populateEpisodes(episodes) {
+  const $episodesList = $("#episodesList"); //TODO: put with global variables
+  $episodesList.empty();
+  console.log(episodes);
+
+  for (let episode of episodes) {
+    const $episode = $(
+      `<li>${episode.name} (season ${episode.season}, number ${episode.number})</li>`
+    );
+    $episodesList.append($episode);
+  }
+
+  $episodesArea.show(); //check if this is really show
+}
